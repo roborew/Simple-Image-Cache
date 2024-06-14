@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}Image Preview{% endblock %}</h1>
+{% endblock %}
+{% block content %}
+    <article class="post">
+        <header>
+            <div>
+                <h1>Test Image {{ image_dir }}</h1>
+                <div class="about">by Test User on 2021-01-01</div>
+            </div>
+        </header>
+        <img class="testImage" alt="image.jpg" src="http://127.0.0.1:8000/insecure/rs:100:100/s:4/test_imagsss.jpeg">
+        <img class="imageCache" alt="image.jpg" src="http://127.0.0.1:8000/insecure/rs:100:100/s:4/test_image.jpeg">
+    </article>
+    <hr>
+    <article class="post">
+        <header>
+            <div>
+                <h1>Test Image</h1>
+                <div class="about">by Test User on 2021-01-01</div>
+            </div>
+        </header>
+        <img class="testImage" alt="image.jpg" src="http://127.0.0.1:8000/insecure/rs:100:100/s:4/test_image.jpeg">
+
+
+    </article>
+    <hr>
+{% endblock %}
