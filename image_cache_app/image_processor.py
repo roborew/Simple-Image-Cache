@@ -1,9 +1,11 @@
 import hashlib
 import os
 
+import cv2
 from flask import current_app
 
 from image_cache_app.cache.cache_manager import CacheManager
+from image_cache_app.storage.image_loader import ImageLoader
 from image_cache_app.utils.url_parser import parse_url
 
 
@@ -56,17 +58,28 @@ class ImageProcessor:
 
         self.check_cache_folder_exists()
         image_path = os.path.join(current_app.config["IMAGE_DIR"], params["image_path"])
-        if os.path.exists(image_path):
-            self.cacheManager.set(self.cache_key, self.cache_key + ".jpg")
-            image_cache_path = os.path.join(
-                current_app.config["CACHE_DIR"], self.cache_key + ".jpg"
+        # Load the image from storage if not in cache
+        image_loader = ImageLoader(image_path)
+        try:
+            image = image_loader.load_image()
+            image = cv2.resize(image, (300, 300))
+            image_name = f"{self.cache_key}.webp"
+            cached_image_path = os.path.join(
+                current_app.config["CACHE_DIR"], image_name
             )
-            return image_cache_path
-        else:
+            cv2.imwrite(cached_image_path, image)
+            self.cacheManager.set(self.cache_key, cached_image_path)
+            return cached_image_path
+        except FileNotFoundError:
             current_app.logger.error(f"Image not found:  {image_path}")
             return os.path.join(current_app.config["IMAGE_DIR"], "image_not_found.svg")
+        except Exception as e:
+            current_app.logger.error(
+                f"An error occurred while caching the image: {str(e)}"
+            )
+            return os.path.join(current_app.config["IMAGE_DIR"], "image_not_found.svg")
 
-    def fetch_cache(self):
+    def fetch_cache_image(self):
         """
         Fetches a cached image if it exists.
         If an error occurs during the fetch operation, it logs the error and returns an error response.
@@ -94,7 +107,7 @@ class ImageProcessor:
         If an error occurs while fetching the cache, it logs the error and attempts to cache the image.
         """
         try:
-            cached_result = self.fetch_cache()
+            cached_result = self.fetch_cache_image()
             if cached_result:
                 return cached_result
             else:
