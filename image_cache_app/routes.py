@@ -6,7 +6,7 @@ from flask import (
     send_file,
 )
 
-from image_cache_app.image_processor import ImageProcessor
+from image_cache_app.image_handling import ImageProcessor
 
 bp = Blueprint("routes", __name__)
 

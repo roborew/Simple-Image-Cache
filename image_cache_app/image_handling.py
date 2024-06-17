@@ -5,11 +5,12 @@ import cv2
 from flask import current_app
 
 from image_cache_app.cache.cache_manager import CacheManager
+from image_cache_app.processing.image_processing_factory import ImageProcessingFactory
 from image_cache_app.storage.image_loader import ImageLoader
 from image_cache_app.utils.url_parser import parse_url
 
 
-class ImageProcessor:
+class ImageHandling:
     """
     The ImageProcessor class is responsible for handling image caching operations.
     It fetches cached images if they exist, and caches new images if they don't.
@@ -62,7 +63,11 @@ class ImageProcessor:
         image_loader = ImageLoader(image_path)
         try:
             image = image_loader.load_image()
-            image = cv2.resize(image, (300, 300))
+
+            for action, action_params in params.items():
+                strategy = ImageProcessingFactory.get_process_strategy(action)
+                image = strategy.process(image, action_params)
+
             image_name = f"{self.cache_key}.webp"
             cached_image_path = os.path.join(
                 current_app.config["CACHE_DIR"], image_name
