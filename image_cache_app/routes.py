@@ -6,7 +6,7 @@ from flask import (
     send_file,
 )
 
-from image_cache_app.image_handling import ImageProcessor
+from image_cache_app.image_handling import ImageHandling
 
 bp = Blueprint("routes", __name__)
 
@@ -30,6 +30,6 @@ def serve_cache_image(filename):
 
 @bp.route("/<path:url>")
 def image_cache(url):
-    processor = ImageProcessor(url)
+    processor = ImageHandling(url)
     image = processor.process()
     return send_file(image)

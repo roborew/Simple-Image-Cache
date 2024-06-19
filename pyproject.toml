@@ -1,0 +1,14 @@
+[project]
+name = "Simple Image Cache"
+version = "1.0.0"
+description = "Allows you to request images and run some basic opncv manipulations to cache the file."
+dependencies = [
+    "flask",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["image_cache_app"]
