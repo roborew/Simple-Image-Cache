@@ -1,12 +1,12 @@
 ## Simple Image Cache
 
-Small flask App that process and caches images from a given URL using Open CV and Redis.
-
-This is only a proof of concept and should not be used in production as 
-there are no additional security measures in place.
+Small flask App that processed and caches images from a given URL using Open CV and Redis.
 
 The image can exist either within the chosen image directory configured 
 in the env variables or can be fetched from a remote URL.
+
+WARNING: This is only a proof of concept and should not be used in production as 
+there are no additional security measures in place.
 
 Usage:
        
