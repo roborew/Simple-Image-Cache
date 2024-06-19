@@ -13,6 +13,8 @@ def create_app(config=None):
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
     app.config["IMAGE_DIR"] = os.getenv("IMAGE_DIR")
     app.config["CACHE_DIR"] = os.getenv("CACHE_DIR")
+    app.config["IMAGE_FORMAT_DEFAULT"] = os.getenv("IMAGE_FORMAT_DEFAULT")
+    app.config["IMAGE_QUALITY_DEFAULT"] = os.getenv("IMAGE_QUALITY_DEFAULT")
     if config:
         app.config.update(config)
     with app.app_context():

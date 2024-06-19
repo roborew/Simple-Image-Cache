@@ -1,13 +1,15 @@
 import hashlib
 import os
 
-import cv2
 from flask import current_app
 
 from image_cache_app.cache.cache_manager import CacheManager
 from image_cache_app.processing.image_processing_factory import ImageProcessingFactory
 from image_cache_app.storage.image_loader import ImageLoader
+from image_cache_app.utils.check_cache_folder_exists import check_cache_folder_exists
+from image_cache_app.utils.image_path_location import image_path_location
 from image_cache_app.utils.url_parser import parse_url
+from image_cache_app.utils.validate_hmac import ValidateHmac
 
 
 class ImageHandling:
@@ -25,25 +27,6 @@ class ImageHandling:
         self.cache_key = hashlib.md5(self.url.encode()).hexdigest()
         self.cacheManager = CacheManager()
 
-    @staticmethod
-    def check_cache_folder_exists():
-        """
-        Checks if the cache directory exists, and creates it if it doesn't.
-        The cache directory path is retrieved from the application's configuration.
-        """
-        cache_dir = current_app.config["CACHE_DIR"]
-        try:
-            if not os.path.exists(cache_dir):
-                os.makedirs(cache_dir)
-        except PermissionError:
-            current_app.logger.error(
-                f"Permission denied: Unable to create or access the directory {cache_dir}"
-            )
-        except Exception as e:
-            current_app.logger.error(
-                f"An error occurred while creating or accessing the directory {cache_dir}: {str(e)}"
-            )
-
     def cache_image(self):
         """
         Caches an image.
@@ -52,31 +35,53 @@ class ImageHandling:
         If the image file does not exist, it logs an error and returns a path to a default image.
         """
         params = parse_url(self.url)
+
+        # The following does nothing for now, but for future security enhancements
+        if ValidateHmac.validate(params["hmac_key"]):
+            # Remove the HMAC key from the params as no longer needed
+            del params["hmac_key"]
+        else:
+            raise ValueError("Invalid HMAC")
+
         if not isinstance(params, dict) or "image_path" not in params:
             raise ValueError(
                 "Invalid parameters. 'params' must be a dictionary containing the key 'image_path'."
             )
+        image_path = image_path_location(
+            current_app.config["IMAGE_DIR"], params["image_path"]
+        )
+        del params["image_path"]
 
-        self.check_cache_folder_exists()
-        image_path = os.path.join(current_app.config["IMAGE_DIR"], params["image_path"])
-        # Load the image from storage if not in cache
-        image_loader = ImageLoader(image_path)
         try:
+            # Check cache folder exists
+            check_cache_folder_exists(current_app)
+            # Load the image from storage if not in cache
+            image_loader = ImageLoader(image_path)
             image = image_loader.load_image()
 
-            for action, action_params in params.items():
-                strategy = ImageProcessingFactory.get_process_strategy(action)
-                image = strategy.process(image, action_params)
+            factory = ImageProcessingFactory()
+            file_type = current_app.config["IMAGE_FORMAT_DEFAULT"]
+            quality = current_app.config["IMAGE_QUALITY_DEFAULT"]
 
-            image_name = f"{self.cache_key}.webp"
+            for action, action_params in params.items():
+                strategy = factory.get_process_strategy(action)
+                if action == "file_type":
+                    image, file_type = strategy.process(image, action_params)
+                elif action == "compression":
+                    image, quality = strategy.process(image, action_params)
+                else:
+                    image = strategy.process(image, action_params)
+
+            # Save the processed image to a temporary file and cache it
+            image_name = f"{self.cache_key}.{file_type}"
             cached_image_path = os.path.join(
                 current_app.config["CACHE_DIR"], image_name
             )
-            cv2.imwrite(cached_image_path, image)
-            self.cacheManager.set(self.cache_key, cached_image_path)
+            factory.processor.save(image, cached_image_path, file_type, quality)
+            self.cacheManager.set(self.cache_key, image_name)
             return cached_image_path
         except FileNotFoundError:
-            current_app.logger.error(f"Image not found:  {image_path}")
+            current_app.logger.warn(f"Image not found:  {image_path}")
             return os.path.join(current_app.config["IMAGE_DIR"], "image_not_found.svg")
         except Exception as e:
             current_app.logger.error(
