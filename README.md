@@ -31,7 +31,6 @@ Add and configure a .env file with the following variables:
 
 CACHE_DIR="/PATH/NAME_OF_CACHE_DIR"
 IMAGE_DIR="/PATH/NAME_OF_SRC_IMAGE_DIR"
-
 IMAGE_FORMAT_DEFAULT="webp"
 IMAGE_QUALITY_DEFAULT="80"
 
