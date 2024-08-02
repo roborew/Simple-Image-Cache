@@ -5,8 +5,7 @@ Small flask App that processes and caches images from a given URL using Open CV 
 The image can exist either within the chosen image directory configured 
 in the env variables or can be fetched from a remote URL.
 
-WARNING: This is only a proof of concept and should not be used in production as 
-there are no additional security measures in place.
+WARNING: This is only a proof of concept and would not meet the security requirements for production use currently, use at your own risk.
 
 Usage:
        
